@@ -1,4 +1,4 @@
-###Macroquad Pong
+### Macroquad Pong
 
 Super simple Pong implementation written in Rust, using the Macroquad crate.
 
