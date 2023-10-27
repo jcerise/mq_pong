@@ -1,5 +1,8 @@
 use macroquad::prelude::*;
 
+extern crate rand;
+use rand::prelude::*;
+
 #[derive(Copy, Clone, PartialEq)]
 struct Point {
     x: f32,
@@ -12,14 +15,32 @@ impl Point {
     }
 }
 
-struct Paddle<'a> {
-    texture: &'a Texture2D,
-    point: Point,
+#[derive(Copy, Clone, PartialEq)]
+struct Velocity {
+    x: f32,
+    y: f32
 }
 
-impl Paddle<'_> {
-    fn update_position(&mut self, p: Point) {
-        self.point.y = p.y
+impl Velocity {
+    fn new(x: f32, y: f32) -> Self {
+        Self{x, y}
+    }
+    fn update(&mut self, x:f32, y: f32) {
+        self.x = x;
+        self.y = y;
+    }
+}
+
+struct MoveableObject<'a> {
+    texture: &'a Texture2D,
+    point: Point,
+    velocity: Option<Velocity>,
+}
+
+impl MoveableObject<'_> {
+    fn update_position(&mut self, x: f32, y: f32) {
+        self.point.x = x;
+        self.point.y = y;
     }
 }
 
@@ -35,22 +56,35 @@ fn conf() -> Conf {
 #[macroquad::main(conf)]
 async fn main() {
 
+    let mut rng = rand::thread_rng();
+
     let divider: Texture2D = load_texture("resources/full_divider.png").await.unwrap();
     let player_paddle: Texture2D = load_texture("resources/player_paddle.png").await.unwrap();
     let opponent_paddle: Texture2D = load_texture("resources/opponent_paddle.png").await.unwrap();
+    let ball: Texture2D = load_texture("resources/ball.png").await.unwrap();
 
-    let mut player: Paddle = Paddle{
+    let mut player: MoveableObject = MoveableObject {
         texture: &player_paddle,
-        point: Point::new(10., (screen_height() / 2.) - player_paddle.height())
+        point: Point::new(10., (screen_height() / 2.) - player_paddle.height()),
+        velocity: None
     };
 
-    let mut opponent: Paddle = Paddle{
+    let mut opponent: MoveableObject = MoveableObject {
         texture: &opponent_paddle,
-        point: Point::new(screen_width() - 20., (screen_height() / 2.) - opponent_paddle.height())
+        point: Point::new(screen_width() - 20., (screen_height() / 2.) - opponent_paddle.height()),
+        velocity: None
+    };
+
+    let mut ball: MoveableObject = MoveableObject{
+        texture: &ball,
+        point: Point::new(screen_width() / 2., screen_height() / 2.),
+        velocity: Option::from(Velocity::new(rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0)))
     };
 
     loop {
         clear_background(BLACK);
+
+        update_ball_position(&mut ball);
 
         handle_input(&mut player);
         move_opponent(&mut player, &mut opponent);
@@ -60,13 +94,15 @@ async fn main() {
         draw_texture(&player.texture, player.point.x, player.point.y, WHITE);
         draw_texture(&opponent.texture, opponent.point.x, opponent.point.y, WHITE);
 
+        draw_texture(&ball.texture, ball.point.x, ball.point.y, WHITE);
+
         next_frame().await
     }
 }
 
 /// Handles two cases of input from the player, the up arrow key, and the down arrow key
 /// Movement is restricted to the screen height
-fn handle_input(p: &mut Paddle) {
+fn handle_input(p: &mut MoveableObject) {
     let mut delta = 0.;
     if is_key_down(KeyCode::Up) {
         delta += -2.;
@@ -79,11 +115,27 @@ fn handle_input(p: &mut Paddle) {
         delta = 0.
     }
 
-    p.update_position(Point::new(p.point.x, p.point.y + delta))
+    p.update_position(p.point.x, p.point.y + delta)
 }
 
 /// Moves the opponent paddle. For now, this simply mirrors the players movement
 /// Intention is for this track the ball
-fn move_opponent(player: &Paddle, opponent: &mut Paddle) {
-    opponent.update_position(player.point)
+fn move_opponent(player: &MoveableObject, opponent: &mut MoveableObject) {
+    opponent.update_position(opponent.point.x, player.point.y)
+}
+
+fn update_ball_position(ball: &mut MoveableObject) {
+    if ball.velocity.is_some() {
+        let mut vel = ball.velocity.unwrap();
+
+        if (ball.point.x + vel.x) >= screen_width() || (ball.point.x + vel.x) <= 0. {
+            vel.update(-vel.x, vel.y);
+        }
+
+        if (ball.point.y + vel.y) <= 0. || (ball.point.y + vel.y) >= screen_height() {
+            vel.update(vel.x, -vel.y);
+        }
+
+        ball.update_position(ball.point.x + vel.x, ball.point.y + vel.y)
+    }
 }
