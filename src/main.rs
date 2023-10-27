@@ -42,6 +42,9 @@ impl MoveableObject<'_> {
         self.point.x = x;
         self.point.y = y;
     }
+    fn update_velocity(&mut self, vel: Velocity) {
+        self.velocity = Option::from(vel);
+    }
 }
 
 fn conf() -> Conf {
@@ -78,7 +81,7 @@ async fn main() {
     let mut ball: MoveableObject = MoveableObject{
         texture: &ball,
         point: Point::new(screen_width() / 2., screen_height() / 2.),
-        velocity: Option::from(Velocity::new(rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0)))
+        velocity: Option::from(Velocity::new(rng.gen_range(0.0..10.0), rng.gen_range(0.0..10.0)))
     };
 
     loop {
@@ -136,6 +139,7 @@ fn update_ball_position(ball: &mut MoveableObject) {
             vel.update(vel.x, -vel.y);
         }
 
-        ball.update_position(ball.point.x + vel.x, ball.point.y + vel.y)
+        ball.update_position(ball.point.x + vel.x, ball.point.y + vel.y);
+        ball.update_velocity(vel);
     }
 }
