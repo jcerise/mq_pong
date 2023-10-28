@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 macroquad = "0.4.4"
 rand = "0.8.5"
+
+# Required for WASM builds
+getrandom = { version = "0.2", features = ["js"] }
