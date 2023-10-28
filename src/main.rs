@@ -81,7 +81,7 @@ async fn main() {
     let mut ball: MoveableObject = MoveableObject{
         texture: &ball,
         point: Point::new(screen_width() / 2., screen_height() / 2.),
-        velocity: Option::from(Velocity::new(rng.gen_range(0.0..10.0), rng.gen_range(0.0..10.0)))
+        velocity: Option::from(Velocity::new(rng.gen_range(0.0..5.0), rng.gen_range(0.0..5.0)))
     };
 
     loop {
@@ -131,11 +131,11 @@ fn update_ball_position(ball: &mut MoveableObject) {
     if ball.velocity.is_some() {
         let mut vel = ball.velocity.unwrap();
 
-        if (ball.point.x + vel.x) >= screen_width() || (ball.point.x + vel.x) <= 0. {
+        if (ball.point.x + vel.x) >= (screen_width() - ball.texture.width() / 2.) || (ball.point.x + vel.x) <= (0. - ball.texture.width() / 2.) {
             vel.update(-vel.x, vel.y);
         }
 
-        if (ball.point.y + vel.y) <= 0. || (ball.point.y + vel.y) >= screen_height() {
+        if (ball.point.y + vel.y) <= (0. - ball.texture.width() / 2.) || (ball.point.y + vel.y) >= (screen_height()- ball.texture.width() / 2.) {
             vel.update(vel.x, -vel.y);
         }
 
